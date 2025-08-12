@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
+
 import '../api/controller/network_caller.dart';
 import '../api/controller/auth_utility.dart';
 import '../api/controller/urls/urls.dart';
@@ -207,29 +208,6 @@ class ShiftPlannerController extends GetxController {
         return Colors.amber;
       default:
         return Colors.grey;
-    }
-  }
-
-  // Utility method to navigate to shift details
-  void navigateToShiftDetails(dynamic shift) {
-    if (shift is ShiftModel) {
-      // If we have the full shift model, pass both the model and ID
-      Get.toNamed(
-        '/shift-details',
-        arguments: {'shiftData': shift, 'shiftId': shift.id},
-      );
-    } else if (shift is int) {
-      // If we only have the ID, pass just the ID
-      Get.toNamed('/shift-details', arguments: {'shiftId': shift});
-    }
-  }
-
-  // Method to get shift by ID (for future use)
-  ShiftModel? getShiftById(int id) {
-    try {
-      return shifts.firstWhere((shift) => shift.id == id);
-    } catch (e) {
-      return null;
     }
   }
 }

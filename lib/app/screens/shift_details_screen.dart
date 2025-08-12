@@ -4,7 +4,9 @@ import 'package:get/get.dart';
 import '../controller/text_design.dart';
 
 class ShiftDetailsScreen extends StatefulWidget {
-  const ShiftDetailsScreen({super.key});
+  final int? shiftId; // Add shiftId parameter
+
+  const ShiftDetailsScreen({super.key, this.shiftId});
 
   @override
   State<ShiftDetailsScreen> createState() => _ShiftDetailsScreenState();
@@ -13,7 +15,13 @@ class ShiftDetailsScreen extends StatefulWidget {
 class _ShiftDetailsScreenState extends State<ShiftDetailsScreen> {
   @override
   Widget build(BuildContext context) {
-    final controller=Get.put(ShiftDetailsController());
+    final controller = Get.put(ShiftDetailsController());
+
+    // Initialize with shift ID if provided
+    if (widget.shiftId != null) {
+      controller.initializeWithShiftId(widget.shiftId!);
+    }
+
     return Scaffold(
       backgroundColor: Colors.black12,
       appBar: AppBar(
@@ -22,11 +30,79 @@ class _ShiftDetailsScreenState extends State<ShiftDetailsScreen> {
           icon: const Icon(Icons.arrow_back),
           onPressed: () => Navigator.pop(context),
         ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.refresh),
+            onPressed: () {
+              // Refresh with current shift ID
+              final currentShiftId =
+                  controller.shiftData.value?.id ?? widget.shiftId;
+              if (currentShiftId != null) {
+                controller.getShiftDetails(currentShiftId);
+              }
+            },
+          ),
+        ],
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(12),
-        child: Obx(
-          ()=> Column(
+      body: Obx(() {
+        if (controller.isLoading.value) {
+          return const Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                CircularProgressIndicator(),
+                SizedBox(height: 16),
+                Text(
+                  'Loading shift details...',
+                  style: TextStyle(fontSize: 16),
+                ),
+              ],
+            ),
+          );
+        }
+
+        // Show error state if no data is available
+        if (controller.shiftDetailsData.value == null &&
+            !controller.isLoading.value) {
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.error_outline, size: 64, color: Colors.red.shade300),
+                const SizedBox(height: 16),
+                const Text(
+                  'Failed to load shift details',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w500,
+                    color: Colors.red,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                const Text(
+                  'Please check your connection and try again.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: Colors.grey),
+                ),
+                const SizedBox(height: 16),
+                ElevatedButton(
+                  onPressed: () {
+                    final currentShiftId =
+                        controller.shiftData.value?.id ?? widget.shiftId;
+                    if (currentShiftId != null) {
+                      controller.getShiftDetails(currentShiftId);
+                    }
+                  },
+                  child: const Text('Retry'),
+                ),
+              ],
+            ),
+          );
+        }
+
+        return SingleChildScrollView(
+          padding: const EdgeInsets.all(12),
+          child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               // Shift time summary
@@ -40,18 +116,33 @@ class _ShiftDetailsScreenState extends State<ShiftDetailsScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                     Text("Shift Time Summary",style: TextDesign.bodyMediumTextStyle(25),),
+                      Text(
+                        "Shift Time Summary",
+                        style: TextDesign.bodyMediumTextStyle(25),
+                      ),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceAround,
                         children: [
                           shiftTimeSummary(
                             Icons.calendar_today,
-                              controller.plannedTime.value
-                              , "Planned"
+                            controller.plannedTime.value,
+                            "Planned",
                           ),
-                          shiftTimeSummary(Icons.access_time, "Used", controller.usedTime.value),
-                          shiftTimeSummary(Icons.coffee, "Break", controller.breakTime.value),
-                          shiftTimeSummary(Icons.work, "Worked", controller.workedTime.value),
+                          shiftTimeSummary(
+                            Icons.access_time,
+                            "Used",
+                            controller.usedTime.value,
+                          ),
+                          shiftTimeSummary(
+                            Icons.coffee,
+                            "Break",
+                            controller.breakTime.value,
+                          ),
+                          shiftTimeSummary(
+                            Icons.work,
+                            "Worked",
+                            controller.workedTime.value,
+                          ),
                         ],
                       ),
                     ],
@@ -70,20 +161,29 @@ class _ShiftDetailsScreenState extends State<ShiftDetailsScreen> {
                   padding: const EdgeInsets.all(12),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
-                    children:  [
+                    children: [
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Text(
                             controller.shiftId.value,
-                            style: TextStyle(fontWeight: FontWeight.bold,fontSize:25),
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 25,
+                            ),
                           ),
-                          Text(controller.status.value, style: TextDesign.bodySmallTextStyle(16)),
+                          Text(
+                            controller.status.value,
+                            style: TextDesign.bodySmallTextStyle(16),
+                          ),
                         ],
                       ),
 
                       SizedBox(height: 8),
-                      Text("Schedule", style: TextDesign.bodySmallTextStyle(16)),
+                      Text(
+                        "Schedule",
+                        style: TextDesign.bodySmallTextStyle(16),
+                      ),
                       Text(
                         controller.time.value,
                         style: TextStyle(fontWeight: FontWeight.w500),
@@ -92,16 +192,23 @@ class _ShiftDetailsScreenState extends State<ShiftDetailsScreen> {
                       Text("Address", style: TextDesign.bodySmallTextStyle(16)),
                       Text(controller.address.value),
                       SizedBox(height: 12),
-                      Text("Co-drivers", style: TextDesign.bodySmallTextStyle(16)),
+                      Text(
+                        "Co-drivers",
+                        style: TextDesign.bodySmallTextStyle(16),
+                      ),
                       Text(controller.coDrivers.value),
                       SizedBox(height: 12),
-                      Text("Car & License", style: TextDesign.bodySmallTextStyle(16)),
+                      Text(
+                        "Car & License",
+                        style: TextDesign.bodySmallTextStyle(16),
+                      ),
                       Text(controller.carNumber.value),
                       SizedBox(height: 12),
-                      Text("Instruction", style: TextDesign.bodySmallTextStyle(16)),
                       Text(
-                        controller.instruction.value
+                        "Instruction",
+                        style: TextDesign.bodySmallTextStyle(16),
                       ),
+                      Text(controller.instruction.value),
                     ],
                   ),
                 ),
@@ -123,19 +230,158 @@ class _ShiftDetailsScreenState extends State<ShiftDetailsScreen> {
                         style: TextStyle(fontWeight: FontWeight.bold),
                       ),
                       const SizedBox(height: 12),
-                      overview("Request", controller.requestsDone.value, controller.requestsTotal.value),
+                      overview(
+                        "Request",
+                        controller.requestsDone.value,
+                        controller.requestsTotal.value,
+                      ),
                       const SizedBox(height: 20),
-                      overview("Stops", controller.stopsDone.value, controller.stopsTotal.value),
+                      overview(
+                        "Stops",
+                        controller.stopsDone.value,
+                        controller.stopsTotal.value,
+                      ),
                       const SizedBox(height: 20),
-                      overview("Packages", controller.packagesDone.value, controller.packagesTotal.value),
+                      overview(
+                        "Products",
+                        controller.packagesDone.value,
+                        controller.packagesTotal.value,
+                      ),
                     ],
                   ),
                 ),
               ),
+
+              // Capacity Summary
+              if (controller.shiftDetailsData.value != null) ...[
+                const SizedBox(height: 12),
+                Card(
+                  color: Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.all(12),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          "Capacity Summary",
+                          style: TextDesign.bodyMediumTextStyle(25),
+                        ),
+                        const SizedBox(height: 12),
+                        _buildCapacityItem(
+                          "Weight",
+                          "${controller.shiftDetailsData.value!.data.capacitySummary.usedWeightKg.toStringAsFixed(1)} kg",
+                          "${controller.shiftDetailsData.value!.data.capacitySummary.weightCapacityKg.toStringAsFixed(1)} kg",
+                          controller
+                                  .shiftDetailsData
+                                  .value!
+                                  .data
+                                  .capacitySummary
+                                  .usedWeightKg /
+                              (controller
+                                          .shiftDetailsData
+                                          .value!
+                                          .data
+                                          .capacitySummary
+                                          .weightCapacityKg >
+                                      0
+                                  ? controller
+                                        .shiftDetailsData
+                                        .value!
+                                        .data
+                                        .capacitySummary
+                                        .weightCapacityKg
+                                  : 1),
+                        ),
+                        const SizedBox(height: 12),
+                        _buildCapacityItem(
+                          "Volume",
+                          "${controller.shiftDetailsData.value!.data.capacitySummary.usedVolumeCbm.toStringAsFixed(2)} cbm",
+                          "${controller.shiftDetailsData.value!.data.capacitySummary.volumeCapacityCbm.toStringAsFixed(2)} cbm",
+                          controller
+                                  .shiftDetailsData
+                                  .value!
+                                  .data
+                                  .capacitySummary
+                                  .usedVolumeCbm /
+                              (controller
+                                          .shiftDetailsData
+                                          .value!
+                                          .data
+                                          .capacitySummary
+                                          .volumeCapacityCbm >
+                                      0
+                                  ? controller
+                                        .shiftDetailsData
+                                        .value!
+                                        .data
+                                        .capacitySummary
+                                        .volumeCapacityCbm
+                                  : 1),
+                        ),
+                        const SizedBox(height: 12),
+                        _buildCapacityItem(
+                          "Liquid",
+                          "${controller.shiftDetailsData.value!.data.capacitySummary.usedLiquidLiters.toStringAsFixed(1)} L",
+                          "${controller.shiftDetailsData.value!.data.capacitySummary.liquidCapacityLiters.toStringAsFixed(1)} L",
+                          controller
+                                  .shiftDetailsData
+                                  .value!
+                                  .data
+                                  .capacitySummary
+                                  .usedLiquidLiters /
+                              (controller
+                                          .shiftDetailsData
+                                          .value!
+                                          .data
+                                          .capacitySummary
+                                          .liquidCapacityLiters >
+                                      0
+                                  ? controller
+                                        .shiftDetailsData
+                                        .value!
+                                        .data
+                                        .capacitySummary
+                                        .liquidCapacityLiters
+                                  : 1),
+                        ),
+                        const SizedBox(height: 12),
+                        _buildCapacityItem(
+                          "Pallets",
+                          "${controller.shiftDetailsData.value!.data.capacitySummary.usedPallets}",
+                          "${controller.shiftDetailsData.value!.data.capacitySummary.palletCapacity}",
+                          controller
+                                  .shiftDetailsData
+                                  .value!
+                                  .data
+                                  .capacitySummary
+                                  .usedPallets /
+                              (controller
+                                          .shiftDetailsData
+                                          .value!
+                                          .data
+                                          .capacitySummary
+                                          .palletCapacity >
+                                      0
+                                  ? controller
+                                        .shiftDetailsData
+                                        .value!
+                                        .data
+                                        .capacitySummary
+                                        .palletCapacity
+                                  : 1),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
             ],
           ),
-        ),
-      ),
+        );
+      }),
     );
   }
 
@@ -154,6 +400,7 @@ class _ShiftDetailsScreenState extends State<ShiftDetailsScreen> {
   }
 
   Widget overview(String label, int done, int total) {
+    final percentage = total > 0 ? done / total : 0.0;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -165,12 +412,56 @@ class _ShiftDetailsScreenState extends State<ShiftDetailsScreen> {
         const SizedBox(height: 4),
         ClipRRect(
           borderRadius: BorderRadius.circular(4),
-          child: Stack(
-            children: [
+          child: LinearProgressIndicator(
+            value: percentage.clamp(0.0, 1.0),
+            backgroundColor: Colors.grey.shade300,
+            valueColor: AlwaysStoppedAnimation<Color>(
+              percentage == 1.0
+                  ? Colors.green
+                  : percentage > 0.5
+                  ? Colors.orange
+                  : Colors.red,
+            ),
+            minHeight: 6,
+          ),
+        ),
+      ],
+    );
+  }
 
-              Container(height: 3, color: Colors.green),
-              Container(height: 3, width: 20, color: Colors.red),
-            ],
+  Widget _buildCapacityItem(
+    String label,
+    String used,
+    String total,
+    double percentage,
+  ) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(label, style: const TextStyle(fontWeight: FontWeight.w500)),
+            Text(
+              "$used / $total",
+              style: const TextStyle(fontWeight: FontWeight.w500),
+            ),
+          ],
+        ),
+        const SizedBox(height: 4),
+        ClipRRect(
+          borderRadius: BorderRadius.circular(4),
+          child: LinearProgressIndicator(
+            value: percentage.clamp(0.0, 1.0),
+            backgroundColor: Colors.grey.shade300,
+            valueColor: AlwaysStoppedAnimation<Color>(
+              percentage > 0.8
+                  ? Colors.red
+                  : percentage > 0.6
+                  ? Colors.orange
+                  : Colors.green,
+            ),
+            minHeight: 6,
           ),
         ),
       ],

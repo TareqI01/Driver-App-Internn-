@@ -2,11 +2,11 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_intern/app/api/controller/network_caller.dart';
 import 'package:flutter_intern/app/api/controller/network_response.dart';
+import 'package:flutter_intern/app/api/controller/auth_utility.dart';
 import 'package:flutter_intern/app/controller/text_design.dart';
 import 'package:flutter_intern/app/screens/shift_planner_screen.dart';
 import 'package:flutter_intern/app/widgets/snack_message.dart';
 import 'package:get/get.dart';
-import 'package:get/get_core/src/get_main.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../api/controller/urls/urls.dart';
 
@@ -112,10 +112,8 @@ class _LoginScreenState extends State<LoginScreen> {
                         borderRadius: BorderRadius.circular(5),
                       ),
                     ),
-                    onPressed: () {
-                      LoginScreen();
-                      Get.to(ShiftPlannerScreen());
-                    },
+                    onPressed: login,
+
                     child: Text(
                       "Sign In",
                       style: TextDesign.whiteTextStyle(20),
@@ -129,46 +127,70 @@ class _LoginScreenState extends State<LoginScreen> {
       ),
     );
   }
-  Future<void> LoginScreen() async {
-    loginProgress = true;
-    if (mounted) {
-      setState(() {});
+
+  Future<void> login() async {
+    if (!_key.currentState!.validate()) {
+      return; // Return if validation fails
     }
-    if (_key.currentState!.validate()) {
+
+    if (mounted) {
+      setState(() {
+        loginProgress = true;
+      });
+    }
+
+    try {
       final NetworkResponse? response = await NetworkCaller().postRequest(
         Urls.loginUrl,
-        body: {"username": emailTEcontroller, "password": passTEcontroller},
+        body: {
+          "username": emailTEcontroller.text.trim(),
+          "password": passTEcontroller.text.trim(),
+          "RequestFrom": "DriverApp",
+        },
       );
-      loginProgress = false;
+
       if (mounted) {
-        setState(() {});
+        setState(() {
+          loginProgress = false;
+        });
       }
 
       if (response!.isSuccess) {
-        final token=response.responseData["data"]
-        await _saveLoginState(emailTEcontroller.text, passTEcontroller.text);
-        emailTEcontroller.clear();
-        passTEcontroller.clear();
-      }
-      if (mounted) {
-        SnackMessage(context, "Login Successfully");
-      } else {
-        SnackMessage(context, "Login Failed", true);
-      }
-    }
-  }
+        // Save login status
+        await AuthUtility.saveLoginStatus(true);
 
-  Future<void> _saveLoginState(String email, String password,String token) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool('isLoggedIn', true);
-    await prefs.setString('email', email);
-    await prefs.setString('password', password);
-    await prefs.setString("token",token);
+        // Save authentication token if available in response
+        if (response.jsonResponse != null &&
+            response.jsonResponse['data'] != null &&
+            response.jsonResponse['data']['token'] != null) {
+          await AuthUtility.saveToken(response.jsonResponse['data']['token']);
+          print("Saved authentication token");
+        } else if (response.jsonResponse != null &&
+            response.jsonResponse['token'] != null) {
+          await AuthUtility.saveToken(response.jsonResponse['token']);
+          print("Saved authentication token");
+        }
+
+        Get.offAll(() => ShiftPlannerScreen());
+        SnackMessage(context, "Login Successful");
+      } else {
+        // Show error from API if available, otherwise generic message
+        final errorMessage =
+            response.errorMessage ?? "Login failed. Please try again.";
+        SnackMessage(context, errorMessage, true);
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          loginProgress = false;
+        });
+      }
+      SnackMessage(context, "An error occurred: ${e.toString()}", true);
+    }
   }
 
   @override
   void dispose() {
-    // TODO: implement dispose
     super.dispose();
     emailTEcontroller.clear();
     passTEcontroller.clear();
