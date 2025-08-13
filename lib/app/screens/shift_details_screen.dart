@@ -6,8 +6,8 @@ import '../widgets/car_information.dart';
 
 class ShiftDetailsScreen extends StatefulWidget {
   final int? shiftId; // Add shiftId parameter
-
-  const ShiftDetailsScreen({super.key, this.shiftId});
+  final String carNumber;
+   ShiftDetailsScreen({super.key,required this.shiftId, required this.carNumber});
 
   @override
   State<ShiftDetailsScreen> createState() => _ShiftDetailsScreenState();

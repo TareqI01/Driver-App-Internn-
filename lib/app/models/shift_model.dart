@@ -1,28 +1,28 @@
 class ShiftModel {
-  final int id;
-  final String drivers;
+  final int? id;
+  final String? drivers;
   final String? car;
-  final String status;
-  final int request;
-  final int stops;
-  final int packages;
-  final String photoUrl;
-  final int coDriverCount;
-  final String scheduledStart;
-  final String scheduledEnd;
+  final String? status;
+  final int? request;
+  final int? stops;
+  final int? packages;
+  final String? photoUrl;
+  final int? coDriverCount;
+  final String? scheduledStart;
+  final String? scheduledEnd;
 
   ShiftModel({
-    required this.id,
-    required this.drivers,
+   this.id,
+    this.drivers,
     this.car,
-    required this.status,
-    required this.request,
-    required this.stops,
-    required this.packages,
-    required this.photoUrl,
-    required this.coDriverCount,
-    required this.scheduledStart,
-    required this.scheduledEnd,
+     this.status,
+     this.request,
+     this.stops,
+    this.packages,
+     this.photoUrl,
+     this.coDriverCount,
+     this.scheduledStart,
+     this.scheduledEnd,
   });
 
   factory ShiftModel.fromJson(Map<String, dynamic> json) {

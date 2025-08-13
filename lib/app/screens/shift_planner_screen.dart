@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_intern/app/getx/shift_planner_controller.dart';
+import 'package:flutter_intern/app/models/shift_model.dart';
 import 'package:flutter_intern/app/screens/shift_details_screen.dart';
 import 'package:get/get.dart';
 
@@ -11,6 +12,7 @@ class ShiftPlannerScreen extends StatefulWidget {
 }
 
 class _ShiftPlannerScreenState extends State<ShiftPlannerScreen> {
+  ShiftModel shiftModel=ShiftModel();
   @override
   Widget build(BuildContext context) {
     final controller = Get.put(ShiftPlannerController());
@@ -82,7 +84,7 @@ class _ShiftPlannerScreenState extends State<ShiftPlannerScreen> {
     child: InkWell(
       onTap: () {
         Get.to(
-          () => ShiftDetailsScreen(shiftId: shift.id),
+          () => ShiftDetailsScreen(shiftId: shift.id,carNumber:shiftModel.drivers.toString(),),
 
         );
       },

@@ -32,34 +32,34 @@ class ShiftDetailsController extends GetxController {
   RxInt packagesDone = 87.obs;
   RxInt packagesTotal = 87.obs;
 
-  // Store the shift data
+
   Rx<ShiftModel?> shiftData = Rx<ShiftModel?>(null);
 
-  // Store the shift details data
+
   Rx<ShiftDetailsModel?> shiftDetailsData = Rx<ShiftDetailsModel?>(null);
   RxBool isLoading = false.obs;
 
   @override
   void onInit() {
     super.onInit();
-    // Get shift data from arguments if passed
+
     final arguments = Get.arguments;
     if (arguments != null && arguments['shiftData'] != null) {
       final shift = arguments['shiftData'] as ShiftModel;
       shiftData.value = shift;
       updateShiftDetails(shift);
-      // Fetch detailed data using shift ID
-      getShiftDetails(shift.id);
+
+      getShiftDetails(shift.id!);
     } else if (arguments != null && arguments['shiftId'] != null) {
-      // Fallback to just ID if no full data
+
       final shiftIdValue = arguments['shiftId'];
       shiftId.value = "SH$shiftIdValue";
-      // Fetch detailed data using shift ID
+
       getShiftDetails(shiftIdValue);
     }
   }
 
-  // Add method to refresh shift details
+
   void refreshShiftDetails() {
     final currentShiftId = shiftData.value?.id;
     if (currentShiftId != null) {
@@ -67,23 +67,23 @@ class ShiftDetailsController extends GetxController {
     }
   }
 
-  // Add method to initialize with shift ID
+
   void initializeWithShiftId(int shiftIdValue) {
     shiftId.value = "SH$shiftIdValue";
-    // Set loading state
+
     isLoading.value = true;
-    // Fetch detailed data using shift ID
+
     getShiftDetails(shiftIdValue);
   }
 
   void updateShiftDetails(ShiftModel shift) {
     shiftId.value = "SH${shift.id}";
-    status.value = shift.status;
+    status.value = shift.status!;
 
     // Format the time range
     try {
-      final startTime = DateTime.parse(shift.scheduledStart);
-      final endTime = DateTime.parse(shift.scheduledEnd);
+      final startTime = DateTime.parse(shift.scheduledStart!);
+      final endTime = DateTime.parse(shift.scheduledEnd!);
       final formatter = DateFormat('dd MMM. yyyy, HH:mm');
       time.value =
           "${formatter.format(startTime)} - ${formatter.format(endTime)}";
@@ -91,36 +91,36 @@ class ShiftDetailsController extends GetxController {
       time.value = "${shift.scheduledStart} - ${shift.scheduledEnd}";
     }
 
-    // Update other fields based on shift data
-    coDrivers.value = shift.coDriverCount > 0
+
+    coDrivers.value = shift.coDriverCount! > 0
         ? "${shift.coDriverCount} co-driver(s)"
         : "No co-drivers";
     carNumber.value = shift.car ?? "No car assigned";
 
     // Update counts
-    requestsTotal.value = shift.request;
+    requestsTotal.value = shift.request!;
     requestsDone.value =
-        shift.request; // Assuming all requests are done for now
-    stopsTotal.value = shift.stops;
-    stopsDone.value = shift.stops; // Assuming all stops are done for now
-    packagesTotal.value = shift.packages;
+        shift.request!;
+    stopsTotal.value = shift.stops!;
+    stopsDone.value = shift.stops!;
+    packagesTotal.value = shift.packages!;
     packagesDone.value =
-        shift.packages; // Assuming all packages are delivered for now
+        shift.packages!;
 
-    // Calculate time differences for summary
+
     try {
-      final startTime = DateTime.parse(shift.scheduledStart);
-      final endTime = DateTime.parse(shift.scheduledEnd);
+      final startTime = DateTime.parse(shift.scheduledStart!);
+      final endTime = DateTime.parse(shift.scheduledEnd!);
       final duration = endTime.difference(startTime);
 
       plannedTime.value = "${duration.inHours}h ${duration.inMinutes % 60}m";
       usedTime.value =
-          plannedTime.value; // For now, assuming used time equals planned time
-      breakTime.value = "0h 0m"; // Default break time
+          plannedTime.value;
+      breakTime.value = "0h 0m";
       workedTime.value = plannedTime
-          .value; // For now, assuming worked time equals planned time
+          .value;
     } catch (e) {
-      // Keep default values if parsing fails
+
     }
   }
 
@@ -132,7 +132,7 @@ class ShiftDetailsController extends GetxController {
       final url = "${Urls.shiftDetailsUrl}?shiftId=$shiftIdValue";
       print("Calling API: $url"); // Debug log
 
-      // Get authorization header
+
       final authHeader = await AuthUtility.getAuthorizationHeader();
       print(
         "Authorization header: ${authHeader != null ? "Bearer [TOKEN]" : "No token"}",
@@ -150,21 +150,15 @@ class ShiftDetailsController extends GetxController {
         final shiftDetails = ShiftDetailsModel.fromJson(response.jsonResponse);
         shiftDetailsData.value = shiftDetails;
 
-        // Update the UI with the fetched data
+
         updateUIWithShiftDetails(shiftDetails);
         print(
           "Successfully loaded shift details for ID: $shiftIdValue",
         ); // Debug log
       } else {
-        // Handle error - we'll show it in the UI instead
-        print("Failed to load shift details for ID: $shiftIdValue");
-        print("Error response: ${response.errorMessage}");
-        print("Response status: ${response.statusCode}");
+
       }
     } catch (e) {
-      print(
-        "Error loading shift details for ID $shiftIdValue: ${e.toString()}",
-      );
     } finally {
       isLoading.value = false;
     }
@@ -174,7 +168,7 @@ class ShiftDetailsController extends GetxController {
     final summary = shiftDetails.data.summary;
     final capacity = shiftDetails.data.capacitySummary;
 
-    // Update summary counts
+
     requestsTotal.value = summary.numberOfRequest;
     requestsDone.value = summary.numberOfCompletedRequest;
     stopsTotal.value = summary.numberOfStop;
@@ -182,7 +176,7 @@ class ShiftDetailsController extends GetxController {
     packagesTotal.value = summary.numberOfProduct;
     packagesDone.value = summary.numberOfCompletedProduct;
 
-    // Update status based on completion
+
     if (summary.numberOfRequest > 0 &&
         summary.numberOfCompletedRequest == summary.numberOfRequest) {
       status.value = "Completed";
