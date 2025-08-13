@@ -12,19 +12,19 @@ class ShiftPlannerController extends GetxController {
     'yyyy-MM-dd – kk:mm',
   ).format(DateTime.now()).obs;
 
-  // Observable variables for shifts
+
   RxList<ShiftModel> shifts = <ShiftModel>[].obs;
   RxBool isLoading = false.obs;
   RxBool hasError = false.obs;
   RxString errorMessage = ''.obs;
 
-  // Pagination variables
+
   RxInt currentPage = 1.obs;
   RxInt totalPages = 1.obs;
   RxBool hasNextPage = false.obs;
   RxBool hasPreviousPage = false.obs;
 
-  // Network caller instance
+
   final NetworkCaller _networkCaller = NetworkCaller();
 
   @override
@@ -41,7 +41,7 @@ class ShiftPlannerController extends GetxController {
 
       print('Fetching shifts from: ${Urls.shiftFilterUrl}');
 
-      // Get authorization header
+
       final authHeader = await AuthUtility.getAuthorizationHeader();
       print(
         'Authorization header: ${authHeader != null ? "Bearer [TOKEN]" : "No token"}',
@@ -55,7 +55,7 @@ class ShiftPlannerController extends GetxController {
       print('Response data: ${response.jsonResponse}');
 
       if (response.isSuccess && response.jsonResponse != null) {
-        // Check if the response indicates an error
+
         if (response.jsonResponse['isSuccess'] == false) {
           hasError.value = true;
           errorMessage.value =
@@ -64,7 +64,7 @@ class ShiftPlannerController extends GetxController {
           return;
         }
 
-        // Check if the response has the expected structure
+
         if (response.jsonResponse['data'] != null) {
           print('Parsing response with data key');
           final shiftResponse = ShiftListResponse.fromJson(
@@ -84,12 +84,12 @@ class ShiftPlannerController extends GetxController {
 
           print('Successfully parsed ${shiftResponse.shiftList.length} shifts');
 
-          // Check if we got any shifts
+
           if (shiftResponse.shiftList.isEmpty && page == 1) {
             print('No shifts found in response');
           }
         } else {
-          // If no 'data' key, try to parse directly
+
           print('Parsing response directly (no data key)');
           final shiftResponse = ShiftListResponse.fromJson(
             response.jsonResponse,
@@ -108,7 +108,7 @@ class ShiftPlannerController extends GetxController {
 
           print('Successfully parsed ${shiftResponse.shiftList.length} shifts');
 
-          // Check if we got any shifts
+
           if (shiftResponse.shiftList.isEmpty && page == 1) {
             print('No shifts found in response');
           }
@@ -117,7 +117,7 @@ class ShiftPlannerController extends GetxController {
         hasError.value = true;
         if (response.statusCode == 401) {
           errorMessage.value = 'Unauthorized access. Please login again.';
-          // Handle authentication failure
+
           handleAuthFailure();
           return;
         } else if (response.statusCode == 404) {
@@ -150,7 +150,7 @@ class ShiftPlannerController extends GetxController {
     }
   }
 
-  // Handle authentication failure by redirecting to login
+
   void handleAuthFailure() {
     AuthUtility.clearAuthData();
     Get.offAll(() => LoginScreen());
@@ -168,18 +168,18 @@ class ShiftPlannerController extends GetxController {
       final difference = now.difference(dateTime);
 
       if (difference.inDays == 0) {
-        // Today
+
         if (difference.inHours < 24) {
           return 'Today at ${DateFormat('HH:mm').format(dateTime)}';
         }
       } else if (difference.inDays == 1) {
-        // Yesterday
+
         return 'Yesterday at ${DateFormat('HH:mm').format(dateTime)}';
       } else if (difference.inDays < 7) {
-        // This week
+
         return DateFormat('EEEE at HH:mm').format(dateTime);
       } else {
-        // Older
+
         return DateFormat('MMM dd, yyyy - HH:mm').format(dateTime);
       }
 
@@ -210,21 +210,21 @@ class ShiftPlannerController extends GetxController {
     }
   }
 
-  // Utility method to navigate to shift details
+
   void navigateToShiftDetails(dynamic shift) {
     if (shift is ShiftModel) {
-      // If we have the full shift model, pass both the model and ID
+
       Get.toNamed(
         '/shift-details',
         arguments: {'shiftData': shift, 'shiftId': shift.id},
       );
     } else if (shift is int) {
-      // If we only have the ID, pass just the ID
+
       Get.toNamed('/shift-details', arguments: {'shiftId': shift});
     }
   }
 
-  // Method to get shift by ID (for future use)
+
   ShiftModel? getShiftById(int id) {
     try {
       return shifts.firstWhere((shift) => shift.id == id);
